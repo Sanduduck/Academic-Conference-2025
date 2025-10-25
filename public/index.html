@@ -264,13 +264,14 @@
 
   <!-- Toast -->
   <div id="toast" style="
-    position:fixed;top:20px;right:20px;z-index:9999;
-    background:rgba(17,17,17,.9);color:#fff;
-    padding:12px 16px;border-radius:8px;
-    font-weight:700;font-size:.9rem;
-    opacity:0;transform:translateY(-12px);
-    transition:opacity .25s, transform .25s;
-    pointer-events:none;"></div>
+  position:fixed; top:20px; left:50%; right:auto; z-index:9999;
+  transform:translate(-50%, -12px); opacity:0;
+  background:rgba(17,17,17,.9); color:#fff;
+  padding:12px 16px; border-radius:10px;
+  font-weight:700; font-size:.95rem; text-align:center;
+  max-width:90vw; pointer-events:none;
+  transition:opacity .25s, transform .25s;"></div>
+
 
   <footer>
     <div class="container inner">
@@ -292,18 +293,18 @@
     const qs=s=>document.querySelector(s);
     const qsa=s=>[...document.querySelectorAll(s)];
     function showToast(msg, bg='#16a34a'){
-      const t = document.getElementById('toast');
-      if(!t) return;
-      t.textContent = msg;
-      t.style.background = bg;
-      t.style.opacity = '1';
-      t.style.transform = 'translateY(0)';
-      clearTimeout(t._timer);
-      t._timer = setTimeout(()=>{
-        t.style.opacity = '0';
-        t.style.transform = 'translateY(-12px)';
-      }, 1800);
-    }
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.style.background = bg;
+  t.style.opacity = '1';
+  t.style.transform = 'translate(-50%, 0)';    // 가운데에서 아래로 살짝
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{
+    t.style.opacity = '0';
+    t.style.transform = 'translate(-50%, -12px)'; // 위로 사라짐
+  }, 1800);
+}
     function openLoginModal(){
       const mod = qs('#modalLogin');
       if(!mod) return;

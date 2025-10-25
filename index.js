@@ -1,11 +1,10 @@
-// index.js
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const cookieParser = require('cookie-parser');
-const sharp = require('sharp'); // 썸네일 폴백용
+const sharp = require('sharp');
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
@@ -18,12 +17,10 @@ const PORT = 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const MODELS_JSON = path.join(DATA_DIR, 'models.json');
 const CATEGORIES_JSON = path.join(DATA_DIR, 'categories.json');
-
 const UPLOADS_ROOT = path.join(__dirname, 'uploads');
 const UPLOADS_MODELS_DIR = path.join(UPLOADS_ROOT, 'models');
 const UPLOADS_THUMBS_DIR = path.join(UPLOADS_ROOT, 'thumbs');
 
-// 디렉토리 보장
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOADS_ROOT, { recursive: true });
 fs.mkdirSync(UPLOADS_MODELS_DIR, { recursive: true });
@@ -32,11 +29,11 @@ fs.mkdirSync(UPLOADS_THUMBS_DIR, { recursive: true });
 /* ================== 미들웨어 ================== */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());  // ✅ cookie-parser 반드시 라우트보다 먼저
+app.use(cookieParser()); // ✅ 쿠키는 반드시 라우트보다 먼저
 app.use('/uploads', express.static(UPLOADS_ROOT));
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* ================== 초기 마이그레이션/시드 ================== */
+/* ================== 초기 마이그레이션 ================== */
 runMigrations();
 db.exec(`
 CREATE TABLE IF NOT EXISTS bookmarks (
@@ -48,9 +45,8 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 );
 `);
 
-/* ================== 토큰/권한 관리 ================== */
+/* ================== 인증 / 권한 ================== */
 const DEMO_SECRET = 'dev-secret';
-
 function makeToken(username, role) {
   return Buffer.from(`${username}:${role}:${DEMO_SECRET}`).toString('base64');
 }
@@ -62,17 +58,15 @@ function parseToken(token) {
     return { username, role };
   } catch { return null; }
 }
-
 function currentUser(req) {
   const token = req.cookies?.ac_auth;
   if (!token) return null;
   return parseToken(token);
 }
-
 function requireLogin(req, res, next) {
   const me = currentUser(req);
   if (!me) return res.status(401).json({ error: 'UNAUTHORIZED' });
-  req.me = me;
+  req.me = me; // admin도 허용
   next();
 }
 function requireAdmin(req, res, next) {
@@ -81,7 +75,6 @@ function requireAdmin(req, res, next) {
   req.user = me;
   next();
 }
-
 async function getUserId(username) {
   return new Promise((resolve, reject) => {
     db.get(`SELECT id FROM users WHERE username=?`, [username], (err, row) => {
@@ -92,20 +85,28 @@ async function getUserId(username) {
 }
 
 /* ================== 북마크 API ================== */
-// ✅ admin도 가능하게 수정
 app.get('/api/bookmarks', requireLogin, async (req, res) => {
   try {
     const uid = await getUserId(req.me.username);
     if (!uid) return res.status(401).json({ error: 'UNAUTHORIZED' });
+
     db.all(`SELECT model_id FROM bookmarks WHERE user_id=? ORDER BY id DESC`, [uid], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ items: rows.map(r => r.model_id) });
+      const ids = rows.map(r => Number(r.model_id));
+
+      // ✅ 확장 응답 지원
+      if (String(req.query.expand) === '1') {
+        const all = readJson(MODELS_JSON, []);
+        const items = all.filter(m => ids.includes(Number(m.id)));
+        return res.json({ items });
+      }
+
+      res.json({ items: ids });
     });
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
-
 app.post('/api/bookmarks', requireLogin, async (req, res) => {
   try {
     const { modelId } = req.body || {};
@@ -117,11 +118,10 @@ app.post('/api/bookmarks', requireLogin, async (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ ok: true });
       });
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
-
 app.delete('/api/bookmarks/:modelId', requireLogin, async (req, res) => {
   try {
     const uid = await getUserId(req.me.username);
@@ -132,29 +132,26 @@ app.delete('/api/bookmarks/:modelId', requireLogin, async (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ ok: true });
       });
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
-/* ================== 관리자 계정 시드 ================== */
+/* ================== 관리자 시드 ================== */
 (function seedAdmin() {
   db.get(`SELECT id FROM users WHERE username='admin' AND role='admin'`, (err, row) => {
     if (err) return console.error('[SEED] admin lookup fail:', err.message);
     if (row) return;
     const pw = process.env.ADMIN_PASSWORD || 'admin';
     const hashed = bcrypt.hashSync(pw, 10);
-    db.run(
-      `INSERT INTO users (username, email, password, role) VALUES ('admin', NULL, ?, 'admin')`,
+    db.run(`INSERT INTO users (username, email, password, role) VALUES ('admin', NULL, ?, 'admin')`,
       [hashed],
-      (e) => e
-        ? console.error('[SEED] admin create fail:', e.message)
-        : console.log('✓ admin user seeded (username=admin, password=' + pw + ')')
-    );
+      e => e ? console.error('[SEED] admin create fail:', e.message)
+             : console.log('✓ admin user seeded (username=admin, password=' + pw + ')'));
   });
 })();
 
-/* ================== Auth API ================== */
+/* ================== Auth ================== */
 app.post('/api/auth/signup', (req, res) => {
   const { username, email, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'username, password 필수' });
@@ -166,7 +163,6 @@ app.post('/api/auth/signup', (req, res) => {
       res.json({ ok: true, userId: this.lastID });
     });
 });
-
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body || {};
   db.get(`SELECT id, username, password, role FROM users WHERE username = ?`, [username], (err, row) => {
@@ -174,46 +170,46 @@ app.post('/api/auth/login', (req, res) => {
     if (!row) return res.status(401).json({ error: '존재하지 않는 계정' });
     if (!bcrypt.compareSync(password, row.password)) return res.status(401).json({ error: '비밀번호 불일치' });
     const token = makeToken(row.username, row.role);
-    res.cookie('ac_auth', token, {
-      httpOnly: false,
-      sameSite: 'Lax',
-      path: '/',
-    });
+    res.cookie('ac_auth', token, { httpOnly: false, sameSite: 'Lax', path: '/' });
     res.json({ ok: true, role: row.role });
   });
 });
-
-app.post('/api/auth/admin-login', (req, res) => {
-  const { password } = req.body || {};
-  db.get(`SELECT username, password, role FROM users WHERE username='admin' AND role='admin'`, (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(500).json({ error: 'admin 계정 누락' });
-    if (!bcrypt.compareSync(password || '', row.password)) return res.status(401).json({ error: '비밀번호 불일치' });
-    const token = makeToken('admin', 'admin');
-    res.cookie('ac_auth', token, { httpOnly: false });
-    res.json({ ok: true, role: 'admin' });
-  });
-});
-
+app.post('/api/auth/logout', (_req, res) => { res.clearCookie('ac_auth'); res.json({ ok: true }); });
 app.get('/api/auth/whoami', (req, res) => {
   const me = currentUser(req);
   res.json({ ok: !!me, user: me || null });
 });
-app.post('/api/auth/logout', (req, res) => {
-  res.clearCookie('ac_auth');
-  res.json({ ok: true });
-});
 
-/* ================== 나머지 기존 API 그대로 유지 ================== */
-// (썸네일 생성, 모델 업로드, 삭제, 카테고리 등 기존 코드 그대로 복사됨)
+/* ================== 유틸 함수 ================== */
+function readJson(file, fallback = []) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf-8')); }
+  catch { return fallback; }
+}
+function writeJson(file, data) {
+  const tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+  fs.renameSync(tmp, file);
+}
+
+/* ================== Models API ================== */
+app.get('/api/models', (_req, res) => {
+  const list = readJson(MODELS_JSON, []);
+  res.json({ items: list });
+});
+app.get('/api/models/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const list = readJson(MODELS_JSON, []);
+  const item = list.find(m => Number(m.id) === id);
+  if (!item) return res.status(404).json({ error: 'NOT_FOUND' });
+  res.json(item);
+});
 
 /* ================== 서버 기동 ================== */
 app.listen(PORT, () => {
   console.log(`Server → http://localhost:${PORT}`);
-  if (!fs.existsSync(MODELS_JSON)) { fs.writeFileSync(MODELS_JSON, '[]', 'utf-8'); console.log('ℹ️ data/models.json created'); }
-  if (!fs.existsSync(CATEGORIES_JSON)) { fs.writeFileSync(CATEGORIES_JSON, '[]', 'utf-8'); console.log('ℹ️ data/categories.json created'); }
+  if (!fs.existsSync(MODELS_JSON)) writeJson(MODELS_JSON, []);
+  if (!fs.existsSync(CATEGORIES_JSON)) writeJson(CATEGORIES_JSON, []);
 });
-
-app.get('/mypage.html', (req, res) => {
+app.get('/mypage.html', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mypage.html'));
 });
