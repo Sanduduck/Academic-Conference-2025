@@ -1,0 +1,76 @@
+[
+  {
+    "id": 12,
+    "title": "Demo",
+    "description": "demo",
+    "url": "https://sketchfab.com/3d-models/updated-3d-graph-of-thermodynamic-behavior-0610b01539db4b6ab62e83b691552210",
+    "subject": "",
+    "thumb": "/uploads/thumbs/1761330516456_fw6jzn6w3cp.jpg"
+  },
+  {
+    "id": 1,
+    "title": "세포 구조 #1",
+    "description": "세포의 기본 구조와 소기관 배치를 살펴볼 수 있는 모델",
+    "url": "https://sketchfab.com/3d-models/eukaryotic-cell-cross-section-74f714127a8c4211bb1a2cac7195fb1a"
+  },
+  {
+    "id": 2,
+    "title": "지구 단면 #2",
+    "description": "지각–맨틀–핵의 층상을 단면으로 표현",
+    "url": "https://sketchfab.com/3d-models/layers-of-the-earth-58d7bf570deb4afda75aa0d50ad93e63"
+  },
+  {
+    "id": 3,
+    "title": "원자 모델 #3",
+    "description": "원자핵과 전자껍질의 개념을 시각화",
+    "url": "https://sketchfab.com/3d-models/atom-8ea2315dc6ae40a4b7c1d2eb75305d2c"
+  },
+  {
+    "id": 4,
+    "title": "태양계 #4",
+    "description": "굴절과 상의 형성 원리",
+    "url": "https://sketchfab.com/3d-models/of-planes-and-satellites-db8f1c8cba3b464993e216acbf4a69b9"
+  },
+  {
+    "id": 5,
+    "title": "화산 지형 #5",
+    "description": "화산체와 분화구, 용암류의 형태를 관찰",
+    "url": "https://sketchfab.com/3d-models/earth-volcano-b081e30676764ffeab31eaea47af0ba6"
+  },
+  {
+    "id": 6,
+    "title": "DNA 나선 #6",
+    "description": "이중나선 구조와 염기쌍 결합을 이해",
+    "url": "https://sketchfab.com/3d-models/deoxyribonucleic-acid-dna-4d57784b0d4841d0ab3d43d526df1c3f"
+  },
+  {
+    "id": 7,
+    "title": "판 구조론 모형 #7",
+    "description": "수렴·발산·보존 경계와 지진대의 관계",
+    "url": "https://sketchfab.com/3d-models/cartoon-low-poly-world-map-e87fa1e143f84348a915b7fe1376d957"
+  },
+  {
+    "id": 8,
+    "title": "역사 유물 #8",
+    "description": "시대별 유물 형태로 문화 변천을 이해",
+    "url": "https://sketchfab.com/3d-models/st-servaas-noodkist-a032571fb5b746ad89e3a1f0b47c7f69"
+  },
+  {
+    "id": 9,
+    "title": "지리 지형 #9",
+    "description": "거대한 협곡·삼각주 등 대표 지형 사례",
+    "url": "https://sketchfab.com/3d-models/antelope-canyon-c53e150ff9904a40b1973c0877d0dcfb"
+  },
+  {
+    "id": 10,
+    "title": "화학 #11",
+    "description": "화학 실험 기본 기구의 명칭과 용도 학습",
+    "url": "https://sketchfab.com/3d-models/chemical-reaction-aca0bf7c2d0440ae81a26ab4a0a399d2"
+  },
+  {
+    "id": 11,
+    "title": "파동 장치 #12",
+    "description": "파동의 간섭·회절 등 현상을 관찰",
+    "url": "https://sketchfab.com/3d-models/updated-3d-graph-of-thermodynamic-behavior-0610b01539db4b6ab62e83b691552210"
+  }
+]
