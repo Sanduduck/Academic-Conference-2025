@@ -20,7 +20,8 @@
     .container{max-width:1280px;margin:0 auto;padding:0 16px}
     header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
     .nav{display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}
-    .brand{display:flex;align-items:center;gap:.6rem;font-weight:800}
+    .brand{display:inline-flex;align-items:center;gap:.6rem;font-weight:800;text-decoration:none;color:var(--text)}
+    .brand:hover{opacity:.85}
     .logo{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--c1),var(--c2))}
     .search{flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:8px 10px;margin:0 16px}
     .search input{border:0;outline:0;flex:1;font:inherit}
@@ -55,6 +56,18 @@
     }
     /* 삭제 버튼: 메인에서는 항상 숨김(관리자 기능은 /admin 전용) */
     .thumb-del{ display:none; }
+
+    /* ★ 북마크 버튼: 우상단으로 이동 */
+    .bookmark-btn{
+      position:absolute;top:8px;right:8px;left:auto;
+      z-index:2;width:32px;height:32px;border-radius:50%;
+      display:inline-grid;place-items:center;
+      background:rgba(255,255,255,.95);border:1px solid var(--bd);
+      cursor:pointer;box-shadow:var(--shadow);line-height:1;
+    }
+    .bookmark-btn i{font-size:18px}
+    .bookmark-btn.active{background:#fff}
+    .bookmark-btn:hover{filter:brightness(.96)}
 
     .meta{padding:10px;text-align:left}
     .title{font-weight:700;text-align:left}
@@ -119,22 +132,6 @@
     @media(max-width:720px){ .mypage .row{grid-template-columns:1fr} }
     .mypage .card{border:1px solid var(--bd);border-radius:12px;padding:14px;background:#fff}
     .mypage h3{margin:0 0 8px 0}
-    .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: .6rem;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  color: var(--text);
-  text-decoration: none;
-  cursor: pointer;
-}
-.brand:hover {
-  opacity: .85;
-  text-decoration: none;
-}
-
   </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -142,8 +139,7 @@
 <body>
   <header>
     <div class="container nav">
-      <a class="brand" id="brandHome" href="/">
-    <div class="logo"></div> 교육용 모델 카탈로그</a>
+      <a class="brand" id="brandHome" href="/"><div class="logo"></div> 교육용 모델 카탈로그</a>
       <div class="search">
         🔎<input id="q" placeholder="모델/설명 검색 (예: 세포, 화산, DNA, 광학)" />
         <button class="btn" id="btnSearch">검색</button>
@@ -182,7 +178,9 @@
         <button class="dialog-close" id="btnClose" type="button" aria-label="닫기">✕</button>
       </div>
       <div class="dialog-body">
-        <iframe id="viewer" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+        <iframe id="viewer" allow="autoplay; fullscreen; xr-spatial-tracking"
+          xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered
+          web-share allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
       </div>
     </div>
   </div>
@@ -237,7 +235,7 @@
     </div>
   </div>
 
-  <!-- My Page Modal (일반 사용자 전용) -->
+  <!-- My Page Modal (간단 버전 — 버튼 전환용) -->
   <div class="modal" id="modalMypage" aria-hidden="true" role="dialog" aria-modal="true" tabindex="-1">
     <div class="dialog light" style="width:min(720px,92vw);">
       <div class="dialog-header">
@@ -264,6 +262,16 @@
     </div>
   </div>
 
+  <!-- Toast -->
+  <div id="toast" style="
+    position:fixed;top:20px;right:20px;z-index:9999;
+    background:rgba(17,17,17,.9);color:#fff;
+    padding:12px 16px;border-radius:8px;
+    font-weight:700;font-size:.9rem;
+    opacity:0;transform:translateY(-12px);
+    transition:opacity .25s, transform .25s;
+    pointer-events:none;"></div>
+
   <footer>
     <div class="container inner">
       <div>© <span id="year"></span> Model Catalog</div>
@@ -280,33 +288,31 @@
   </script>
 
   <script>
-    let MODELS = [];
-    async function loadModels(){
-      try{
-        const res = await fetch('/api/models', { credentials: 'include' });
-        if(res.ok){
-          const data = await res.json();
-          if(data && Array.isArray(data.items)){
-            MODELS = data.items.map(m=>({
-              id:m.id, title:m.title, description:m.description,
-              url:m.url, subject:m.subject, thumb:m.thumb||null
-            }));
-            return;
-          }
-        }
-      }catch(e){ console.warn('GET /api/models 실패', e); }
-
-      try{
-        const res = await fetch('models.json', { cache:'no-store' });
-        if(res.ok){ MODELS = await res.json(); if(Array.isArray(MODELS) && MODELS.length) return; }
-      }catch(e){ console.warn('models.json 로드 실패', e); }
-
-      try{
-        const fallback = document.getElementById('models-json');
-        if(fallback){ MODELS = JSON.parse(fallback.textContent || '[]'); }
-      }catch(e){ console.warn('inline JSON 파싱 실패', e); MODELS = []; }
+    /* ====== Utils ====== */
+    const qs=s=>document.querySelector(s);
+    const qsa=s=>[...document.querySelectorAll(s)];
+    function showToast(msg, bg='#16a34a'){
+      const t = document.getElementById('toast');
+      if(!t) return;
+      t.textContent = msg;
+      t.style.background = bg;
+      t.style.opacity = '1';
+      t.style.transform = 'translateY(0)';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(()=>{
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-12px)';
+      }, 1800);
+    }
+    function openLoginModal(){
+      const mod = qs('#modalLogin');
+      if(!mod) return;
+      mod.classList.add('open');
+      mod.focus();
+      document.body.classList.add('no-scroll');
     }
 
+    let MODELS = [];
     const SUBJECTS = {
       biology:{ label:'생명과학', keywords:['세포','DNA','생명','생물','유전','단백질','광합성'] },
       earth:{ label:'지구과학', keywords:['지구','단면','판 구조','화산','지진','대기','기상','지질'] },
@@ -314,10 +320,7 @@
       chemistry:{ label:'화학', keywords:['원자','분자','화합물','실험','기구','반응','주기율'] },
       geography:{ label:'지리', keywords:['지형','삼각주','협곡','지리','지도'] }
     };
-
-    const qs=s=>document.querySelector(s);
-    const qsa=s=>[...document.querySelectorAll(s)];
-    const state={q:"",page:1,per:12,sort:"relevance", subject:null, isLoggedIn:false, user:null};
+    const state={q:"",page:1,per:12,sort:"relevance", subject:null, isLoggedIn:false, user:null, bookmarks:new Set()};
 
     // ---- 자동 썸네일 (캔버스) ----
     const THUMB_CACHE = new Map();
@@ -349,6 +352,32 @@
       }catch(e){return url;}
     }
 
+    async function loadModels(){
+      try{
+        const res = await fetch('/api/models', { credentials: 'include' });
+        if(res.ok){
+          const data = await res.json();
+          if(data && Array.isArray(data.items)){
+            MODELS = data.items.map(m=>({
+              id:m.id, title:m.title, description:m.description,
+              url:m.url, subject:m.subject, thumb:m.thumb||null
+            }));
+            return;
+          }
+        }
+      }catch(e){ console.warn('GET /api/models 실패', e); }
+
+      try{
+        const res = await fetch('models.json', { cache:'no-store' });
+        if(res.ok){ MODELS = await res.json(); if(Array.isArray(MODELS) && MODELS.length) return; }
+      }catch(e){ console.warn('models.json 로드 실패', e); }
+
+      try{
+        const fallback = document.getElementById('models-json');
+        if(fallback){ MODELS = JSON.parse(fallback.textContent || '[]'); }
+      }catch(e){ console.warn('inline JSON 파싱 실패', e); MODELS = []; }
+    }
+
     function openModal(title,url){
       const modal=qs('#modal');
       const iframe=qs('#viewer');
@@ -373,14 +402,20 @@
       return kw.some(k=> text.includes(k.toLowerCase()));
     }
 
+    function isBookmarked(id){ return state.bookmarks.has(Number(id)); }
+
     function cardHTML(m){
       const src = m.thumb || genThumb(m);
       const bg = src ? ` style="background-image:url('${String(src).replace(/'/g,"%27")}')"` : '';
       const label = src ? '' : `썸네일 ${m.id}`;
+      const bmActive = isBookmarked(m.id);
       return `
       <article class="item" data-id="${m.id}">
         <div class="thumb" data-id="${m.id}" data-title="${m.title}" data-url="${m.url}"${bg}>
           ${label}
+          <button class="bookmark-btn${bmActive?' active':''}" type="button" title="북마크" aria-label="북마크" data-bookmark="${bmActive?'1':'0'}" style="display:none;">
+            <i class='bx ${bmActive?'bxs-bookmark':'bx-bookmark'}'></i>
+          </button>
           <button class="thumb-del" type="button" title="삭제" aria-label="삭제">×</button>
         </div>
         <div class="meta">
@@ -402,17 +437,71 @@
       qs('#count').textContent=`${total}개 결과`;
       qs('#results').innerHTML=pageItems.map(cardHTML).join('');
 
-      // 썸네일 클릭 → 미리보기
-      qsa('.thumb').forEach(el=>el.addEventListener('click',()=>openModal(el.dataset.title,el.dataset.url)));
+      // 썸네일 클릭 → 미리보기 (★ 북마크 버튼 클릭은 무시)
+      qsa('.thumb').forEach(el=>el.addEventListener('click',(e)=>{
+        if(e.target.closest('.bookmark-btn')) return; // 가드
+        openModal(el.dataset.title,el.dataset.url);
+      }));
 
-      // (메인페이지) 삭제 버튼 무력화(항상 숨김)
+      // (메인페이지) 삭제 버튼 무력화
       qsa('.thumb-del').forEach(btn=>{
         btn.style.display = 'none';
         btn.onclick = e => { e.stopPropagation(); return false; };
       });
 
+      // ★ 북마크 버튼 보이기/동작(로그인시에만)
+      qsa('.bookmark-btn').forEach(btn=>{
+        if(state.isLoggedIn){
+          btn.style.display = 'inline-grid';
+        }else{
+          btn.style.display = 'none';
+        }
+        btn.addEventListener('click', async (e)=>{
+          e.stopPropagation();   // 전파 차단
+          e.preventDefault();    // 기본 동작 차단
+
+          const card = btn.closest('.item');
+          const id = Number(card?.dataset?.id);
+          if(!id) return;
+
+          if(isBookmarked(id)){
+            try{
+              const res = await fetch(`/api/bookmarks/${id}`, { method:'DELETE', credentials:'include' });
+              if(res.status===401){ openLoginModal(); return; }
+              if(!res.ok){ throw new Error('BOOKMARK_DELETE_FAILED'); }
+              state.bookmarks.delete(id);
+              btn.classList.remove('active');
+              btn.dataset.bookmark='0';
+              btn.querySelector('i').className='bx bx-bookmark';
+              showToast('북마크에서 제거됨 ❌', '#e63946');
+            }catch(err){
+              alert('북마크 해제 실패: ' + (err.message||'UNKNOWN'));
+            }
+          }else{
+            try{
+              const res = await fetch('/api/bookmarks', {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                credentials:'include',
+                body: JSON.stringify({ modelId: id })
+              });
+              if(res.status===401){ openLoginModal(); return; }
+              if(!res.ok){ throw new Error('BOOKMARK_POST_FAILED'); }
+              state.bookmarks.add(id);
+              btn.classList.add('active');
+              btn.dataset.bookmark='1';
+              btn.querySelector('i').className='bx bxs-bookmark';
+              showToast('북마크에 추가됨 ✅');
+            }catch(err){
+              alert('북마크 실패: ' + (err.message||'UNKNOWN'));
+            }
+          }
+        });
+      });
+
       // 페이저
-      qs('#pager').innerHTML=Array.from({length:pages})
+      const pager = qs('#pager');
+      pager.innerHTML=Array.from({length:pages})
         .map((_,i)=>`<button ${i+1===state.page?'class="btn primary"':'class="btn"'} data-page="${i+1}">${i+1}</button>`)
         .join('');
       qsa('#pager [data-page]').forEach(b=>b.addEventListener('click',()=>{state.page=+b.dataset.page;render()}));
@@ -449,18 +538,13 @@
     const signin = document.getElementById("sign-in");
     const loginin = document.getElementById("login-in");
     const loginup = document.getElementById("login-up");
-
     signup && signup.addEventListener("click", () => {
-      loginin.classList.remove("block");
-      loginup.classList.remove("none");
-      loginin.classList.add("none");
-      loginup.classList.add("block");
+      loginin.classList.remove("block"); loginup.classList.remove("none");
+      loginin.classList.add("none");     loginup.classList.add("block");
     });
     signin && signin.addEventListener("click", () => {
-      loginin.classList.remove("none");
-      loginup.classList.remove("block");
-      loginin.classList.add("block");
-      loginup.classList.add("none");
+      loginin.classList.remove("none");  loginup.classList.remove("block");
+      loginin.classList.add("block");    loginup.classList.add("none");
     });
 
     // API 래퍼
@@ -476,6 +560,23 @@
       return data;
     }
 
+    // ★ 내 북마크 불러오기
+    async function loadMyBookmarks(){
+      state.bookmarks.clear();
+      try{
+        // 확장 응답(객체 배열)을 원하면 ?expand=1 사용 가능. 여기서는 id 세트만 써도 충분
+        const res = await fetch('/api/bookmarks', { credentials:'include' });
+        if(!res.ok) return;
+        const data = await res.json().catch(()=>({}));
+        const ids = Array.isArray(data?.items) ? data.items
+                 : Array.isArray(data) ? data
+                 : [];
+        ids.forEach(id=> state.bookmarks.add(Number(id)));
+      }catch(e){
+        console.warn('loadMyBookmarks fail', e);
+      }
+    }
+
     async function refreshAuthUI(){
       try{
         const me = await api('/api/auth/whoami');
@@ -483,11 +584,15 @@
         if(me && me.user && me.user.role !== 'admin'){
           state.isLoggedIn = true;
           state.user = me.user;
+          await loadMyBookmarks();
         }else{
           state.isLoggedIn = false;
           state.user = null;
+          state.bookmarks.clear();
         }
-      }catch{ state.isLoggedIn = false; state.user = null; }
+      }catch{
+        state.isLoggedIn = false; state.user = null; state.bookmarks.clear();
+      }
 
       const btnAuth = document.getElementById('btnAuth');
       const btnLogout = document.getElementById('btnLogout');
@@ -499,27 +604,23 @@
         btnAuth.textContent = '로그인';
         btnLogout.style.display = 'none';
       }
-      render(); // 상태 반영
+      render(); // 상태 반영(북마크 아이콘도 반영)
     }
 
-    // 로그인/마이페이지 모달 열기
-    document.getElementById('btnAuth').addEventListener('click', ()=>{
+    // 로그인/마이페이지 이동
+    document.getElementById('btnAuth').addEventListener('click', (e)=>{
+      e.preventDefault();
       if(state.isLoggedIn){
-        // 마이페이지 오픈
-        const mod = qs('#modalMypage');
-        qs('#myUser').textContent = state.user ? `${state.user.username}` : '-';
-        mod.classList.add('open'); mod.focus(); document.body.classList.add('no-scroll');
+        window.location.href = '/mypage.html';
       }else{
-        // 로그인 모달
-        const mod = qs('#modalLogin');
-        mod.classList.add('open'); mod.focus(); document.body.classList.add('no-scroll');
+        openLoginModal();
       }
     });
 
     // 로그아웃 (헤더)
     document.getElementById('btnLogout').addEventListener('click', async ()=>{
       try{ await api('/api/auth/logout','POST'); }catch(e){ console.warn('logout error', e); }
-      state.isLoggedIn = false; state.user = null;
+      state.isLoggedIn = false; state.user = null; state.bookmarks.clear();
       ['#modalLogin','#modalMypage','#modal'].forEach(sel=>qs(sel)?.classList.remove('open'));
       document.body.classList.remove('no-scroll');
       await refreshAuthUI();
@@ -528,7 +629,7 @@
     // 마이페이지 안의 로그아웃
     document.getElementById('btnMypageLogout').addEventListener('click', async ()=>{
       try{ await api('/api/auth/logout','POST'); }catch{}
-      state.isLoggedIn = false; state.user = null;
+      state.isLoggedIn = false; state.user = null; state.bookmarks.clear();
       qs('#modalMypage').classList.remove('open'); document.body.classList.remove('no-scroll');
       await refreshAuthUI();
     });
@@ -543,11 +644,8 @@
       e.preventDefault();
       const username = (document.getElementById('loginUsername').value||'').trim();
       const pw = (document.getElementById('loginPw').value||'').trim();
-
       try{
         await api('/api/auth/login','POST',{ username, password: pw });
-
-        // 2) 혹시 서버에서 관리자 토큰이 발급되었을 경우(예외) 즉시 차단
         try{
           const me = await api('/api/auth/whoami');
           if(me?.user?.role === 'admin'){
@@ -555,13 +653,12 @@
             return;
           }
         }catch{}
-
         await refreshAuthUI();
         const m=qs('#modalLogin'); m.classList.remove('open'); document.body.classList.remove('no-scroll');
       }catch(err){ alert(err.data?.error || '로그인 실패'); }
     });
 
-    // Sign Up (일반 사용자만 의미 있음)
+    // Sign Up
     document.getElementById('login-up')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const username = document.getElementById('signupUsername')?.value?.trim();
@@ -574,7 +671,7 @@
       }
       try{
         await api('/api/auth/signup','POST',{ username, email, password: pw });
-        signin?.click();
+        (document.getElementById('sign-in')||{}).click?.();
         alert('가입 완료! 이제 로그인하세요.');
       }catch(err){ alert(err.data?.error || '가입 실패'); }
     });
@@ -582,11 +679,6 @@
     // 시작
     document.getElementById('year').textContent=new Date().getFullYear();
     (async()=>{ await refreshAuthUI(); await loadModels(); render(); })();
-    document.getElementById('brandHome')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  window.location.reload();
-});
-
   </script>
 </body>
 </html>
