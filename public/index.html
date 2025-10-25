@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>교육용 모델 카탈로그</title>
-  <meta name="description" content="파일(models.json) 또는 /api/models 기반 교육용 모델 카탈로그. 과목 필터 + 로그인/로그아웃 + 업로드 + 삭제(로그인 시) + Sketchfab 임베드 팝업." />
+  <meta name="description" content="파일(models.json) 또는 /api/models 기반 교육용 모델 카탈로그. 과목 필터 + 로그인/로그아웃 + 마이페이지(+관리자 차단) + Sketchfab 임베드 팝업." />
   <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
 
   <style>
@@ -49,20 +49,13 @@
       aspect-ratio:1.2/1;background:#e9e9ee;display:grid;place-items:center;color:#888;
       border-bottom:1px solid var(--bd);cursor:pointer;position:relative;background-size:cover;background-position:center;background-repeat:no-repeat
     }
-    /* 안내 배지는 뒤로 */
     .thumb::after{
       content:"클릭하여 미리보기";position:absolute;bottom:8px;right:8px;background:rgba(17,17,17,.75);
       color:#fff;font-size:.75rem;padding:4px 8px;border-radius:8px;z-index:1;pointer-events:none;
     }
-    /* 썸네일 내 X 삭제 버튼(로그인 시에만 표시) */
-    .thumb-del{
-      position:absolute;top:8px;right:8px;z-index:2;
-      width:28px;height:28px;border-radius:50%;
-      display:inline-grid;place-items:center;
-      background:rgba(255,255,255,.95);border:1px solid var(--bd);
-      cursor:pointer;box-shadow:var(--shadow);font-weight:800;line-height:1;
-    }
-    .thumb-del:hover{filter:brightness(.96)}
+    /* 삭제 버튼: 메인에서는 항상 숨김(관리자 기능은 /admin 전용) */
+    .thumb-del{ display:none; }
+
     .meta{padding:10px;text-align:left}
     .title{font-weight:700;text-align:left}
     .sub{color:var(--muted);font-size:.85rem;margin-top:2px;text-align:left}
@@ -77,7 +70,7 @@
     .dialog-body{aspect-ratio:16/9;background:#000}
     .dialog-body iframe{width:100%;height:100%;border:0}
 
-    /* Light dialog (Upload/Login) */
+    /* Light dialog (Login/MyPage) */
     .dialog.light{background:#fff;color:#111}
     .dialog.light .dialog-header{background:#f6f7fb;color:#111;border-bottom:1px solid var(--bd)}
     .dialog.light .dialog-body{aspect-ratio:auto;padding:0}
@@ -120,42 +113,28 @@
       .login__create{bottom:-5.5rem}
     }
 
-    /* ======= Upload Form (Pretty) ======= */
-    .upload-sheet{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;padding:18px;}
-    @media(max-width:900px){ .upload-sheet{grid-template-columns:1fr;gap:14px} }
-    .u-card{background:#fff;border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow)}
-    .u-section{padding:16px 16px 2px;border-bottom:1px solid var(--bd);font-weight:700}
-    .u-body{padding:16px}
-    .field{display:grid;gap:6px;margin-bottom:14px}
-    .label{font-size:.92rem;color:#333}
-    .control{position:relative}
-    .control input[type="text"], .control input[type="url"], .control textarea, .control select{
-      width:100%;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;font:inherit;background:#fff;outline:none;transition:border .15s, box-shadow .15s;
-    }
-    .control textarea{min-height:110px;resize:vertical}
-    .control:focus-within input, .control:focus-within textarea, .control:focus-within select{border-color:var(--ring);box-shadow:0 0 0 3px rgba(78,119,186,.15)}
-    .hint{font-size:.8rem;color:#777}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media(max-width:720px){ .row{grid-template-columns:1fr} }
-    .drop{display:grid;place-items:center;border:1.5px dashed #cfd3e1;border-radius:14px;padding:18px;background:linear-gradient(180deg,#fafbff, #fff);
-      text-align:center;cursor:pointer;transition:.15s;min-height:150px;position:relative;overflow:hidden;}
-    .drop:hover{border-color:var(--ring);box-shadow:0 0 0 3px rgba(78,119,186,.12)}
-    .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
-    .drop .icon{font-size:34px;margin-bottom:6px;opacity:.85}
-    .drop .title{font-weight:700}
-    .drop .sub{font-size:.85rem;color:#666}
-    .drop.drag{border-color:var(--c2);box-shadow:0 0 0 4px rgba(78,119,186,.18)}
-    .preview{margin-top:10px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:#fff;display:flex;gap:10px;align-items:center;padding:8px;}
-    .preview img{width:72px;height:72px;object-fit:cover;border-radius:10px;background:#f2f3f7}
-    .preview .meta{font-size:.85rem;color:#555}
-    .preview .meta .name{font-weight:700;color:#333}
-    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+    /* ===== My Page (simple) ===== */
+    .mypage{padding:18px}
+    .mypage .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:720px){ .mypage .row{grid-template-columns:1fr} }
+    .mypage .card{border:1px solid var(--bd);border-radius:12px;padding:14px;background:#fff}
+    .mypage h3{margin:0 0 8px 0}
+    .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+.brand:hover {
+  opacity: .85;
+  text-decoration: none;
+}
 
-    /* ===== Drag & Drop Visuals ===== */
-    .item[draggable="true"]{cursor:grab}
-    .item.dragging{opacity:.6;transform:scale(.98)}
-    .item.drag-over-before{outline:2px dashed var(--ring); outline-offset:-8px}
-    .item.drag-over-after{outline:2px dashed var(--ring); outline-offset:-8px}
   </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -163,7 +142,8 @@
 <body>
   <header>
     <div class="container nav">
-      <div class="brand"><div class="logo"></div> 교육용 모델 카탈로그</div>
+      <a class="brand" id="brandHome" href="/">
+    <div class="logo"></div> 교육용 모델 카탈로그</a>
       <div class="search">
         🔎<input id="q" placeholder="모델/설명 검색 (예: 세포, 화산, DNA, 광학)" />
         <button class="btn" id="btnSearch">검색</button>
@@ -207,7 +187,7 @@
     </div>
   </div>
 
-  <!-- Login Modal -->
+  <!-- Login Modal (메인에서는 관리자 로그인 차단) -->
   <div class="modal" id="modalLogin" aria-hidden="true" role="dialog" aria-modal="true" tabindex="-1">
     <div class="login">
       <div class="login__content">
@@ -225,7 +205,6 @@
               <i class='bx bx-lock login__icon'></i>
               <input id="loginPw" type="password" placeholder="Password" class="login__input" required>
             </div>
-            <a href="#" class="login__forgot">Forgot Password?</a>
             <button class="login__button" id="btnSignIn" type="submit">Sign In</button>
             <div>
               <span class="login__account login__account--account">Don't Have an Account?</span>
@@ -252,97 +231,35 @@
               <span class="login__account login__account--account">Already have an Account?</span>
               <span class="login__signup login__signup--signup" id="sign-in">Sign In</span>
             </div>
-            <div class="login__social">
-              <i class='bx bxl-facebook login__social--icon'></i>
-              <i class='bx bxl-twitter login__social--icon'></i>
-              <i class='bx bxl-google login__social--icon'></i>
-            </div>
           </form>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Upload Modal -->
-  <div class="modal" id="modalUpload" aria-hidden="true" role="dialog" aria-modal="true" tabindex="-1">
-    <div class="dialog light" style="width:min(900px,92vw);">
+  <!-- My Page Modal (일반 사용자 전용) -->
+  <div class="modal" id="modalMypage" aria-hidden="true" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="dialog light" style="width:min(720px,92vw);">
       <div class="dialog-header">
-        <div class="dialog-title">모델 업로드</div>
-        <button class="dialog-close" id="btnCloseUpload" type="button" aria-label="닫기">✕</button>
+        <div class="dialog-title">마이페이지</div>
+        <button class="dialog-close" id="btnCloseMypage" type="button" aria-label="닫기">✕</button>
       </div>
-
       <div class="dialog-body">
-        <div class="upload-sheet">
-          <!-- Left: form fields -->
-          <div class="u-card">
-            <div class="u-section">기본 정보</div>
-            <div class="u-body">
-              <form id="uploadForm" class="form">
-                <div class="field">
-                  <label class="label">제목 <span class="hint">(*필수)</span></label>
-                  <div class="control"><input id="uTitle" type="text" placeholder="예: 세포 구조 #1" required></div>
-                </div>
-
-                <div class="field">
-                  <label class="label">설명 <span class="hint">(*필수)</span></label>
-                  <div class="control"><textarea id="uDesc" placeholder="모델의 주요 학습 포인트를 적어주세요." required></textarea></div>
-                </div>
-
-                <div class="row">
-                  <div class="field">
-                    <label class="label">Sketchfab URL <span class="hint">(*필수)</span></label>
-                    <div class="control"><input id="uUrl" type="url" placeholder="https://sketchfab.com/3d-models/..." required></div>
-                    <div class="hint">URL에서 마지막 slug만으로도 자동 임베드 됩니다.</div>
-                  </div>
-
-                  <div class="field">
-                    <label class="label">과목</label>
-                    <div class="control">
-                      <select id="uSubject">
-                        <option value="">선택 안 함</option>
-                        <option value="biology">생명과학</option>
-                        <option value="earth">지구과학</option>
-                        <option value="physics">물리</option>
-                        <option value="chemistry">화학</option>
-                        <option value="history">한국사</option>
-                        <option value="geography">지리</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="actions">
-                  <button class="btn" type="button" id="btnResetUpload">초기화</button>
-                  <button class="btn primary" type="submit">추가</button>
-                </div>
-              </form>
+        <div class="mypage">
+          <div class="row">
+            <div class="card">
+              <h3>내 정보</h3>
+              <div id="myUser">-</div>
+            </div>
+            <div class="card">
+              <h3>즐겨찾기 (예정)</h3>
+              <div class="muted">추후 북마크/최근 본 항목 등을 보여줄 예정입니다.</div>
             </div>
           </div>
-
-          <!-- Right: thumbnail dropzone & preview -->
-          <div class="u-card">
-            <div class="u-section">썸네일</div>
-            <div class="u-body">
-              <label class="drop" id="dropArea">
-                <input id="uThumb" type="file" accept="image/*">
-                <div>
-                  <div class="icon">🖼️</div>
-                  <div class="title">이미지 드래그&드롭 또는 클릭하여 선택</div>
-                  <div class="sub">PNG/JPG 권장 · 미선택 시 자동 생성 썸네일 사용</div>
-                </div>
-              </label>
-
-              <div class="preview" id="thumbPreview" style="display:none;">
-                <img id="thumbPreviewImg" alt="미리보기">
-                <div class="meta">
-                  <div class="name" id="thumbName">image.png</div>
-                  <div class="hint" id="thumbSize">-</div>
-                </div>
-              </div>
-
-            </div>
+          <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end">
+            <button class="btn ghost" id="btnMypageLogout">로그아웃</button>
           </div>
-        </div> <!-- /upload-sheet -->
+        </div>
       </div>
     </div>
   </div>
@@ -400,9 +317,9 @@
 
     const qs=s=>document.querySelector(s);
     const qsa=s=>[...document.querySelectorAll(s)];
-    const state={q:"",page:1,per:12,sort:"relevance", subject:null, isLoggedIn:false};
+    const state={q:"",page:1,per:12,sort:"relevance", subject:null, isLoggedIn:false, user:null};
 
-    // ---- 자동 썸네일
+    // ---- 자동 썸네일 (캔버스) ----
     const THUMB_CACHE = new Map();
     function hashCode(str){ let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h|=0; } return Math.abs(h); }
     function pickColors(key){
@@ -488,27 +405,10 @@
       // 썸네일 클릭 → 미리보기
       qsa('.thumb').forEach(el=>el.addEventListener('click',()=>openModal(el.dataset.title,el.dataset.url)));
 
-      // 삭제 버튼(로그인 상태에서만 보임 & 동작)
+      // (메인페이지) 삭제 버튼 무력화(항상 숨김)
       qsa('.thumb-del').forEach(btn=>{
-        btn.style.display = state.isLoggedIn ? 'inline-grid' : 'none';
-        btn.addEventListener('click', async (e)=>{
-          e.stopPropagation();
-          if(!state.isLoggedIn){ alert('로그인이 필요합니다.'); return; }
-          const id = btn.closest('.item')?.dataset?.id;
-          if(!id) return;
-          if(!confirm('정말 삭제하시겠습니까?')) return;
-          try{
-            const res = await fetch(`/api/models/${id}`, { method:'DELETE', credentials:'include' });
-            if(!res.ok){
-              if(res.status === 401){ alert('로그인이 필요합니다. 먼저 로그인하세요.'); return; }
-              const d = await res.json().catch(()=>({}));
-              throw new Error(d.error || 'DELETE_FAILED');
-            }
-            await loadModels(); render();
-          }catch(err){
-            alert('삭제 실패: ' + (err.message || 'UNKNOWN'));
-          }
-        });
+        btn.style.display = 'none';
+        btn.onclick = e => { e.stopPropagation(); return false; };
       });
 
       // 페이저
@@ -516,9 +416,6 @@
         .map((_,i)=>`<button ${i+1===state.page?'class="btn primary"':'class="btn"'} data-page="${i+1}">${i+1}</button>`)
         .join('');
       qsa('#pager [data-page]').forEach(b=>b.addEventListener('click',()=>{state.page=+b.dataset.page;render()}));
-
-      // ===== 드래그 앤 드롭 정렬 (현재 페이지 범위 내) =====
-      setupDragAndDrop();
     }
 
     // 검색
@@ -547,7 +444,7 @@
     qs('#modal').addEventListener('click', e=>{ if(e.target === e.currentTarget) closeModal(); });
     document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeModal(); }, true);
 
-    // ===== Login UI interactions (+ Logout) =====
+    // ===== Login UI interactions =====
     const signup = document.getElementById("sign-up");
     const signin = document.getElementById("sign-in");
     const loginin = document.getElementById("login-in");
@@ -582,56 +479,99 @@
     async function refreshAuthUI(){
       try{
         const me = await api('/api/auth/whoami');
-        state.isLoggedIn = !!(me && me.user);
-      }catch{ state.isLoggedIn = false; }
+        // 메인에서는 'admin'을 로그인으로 취급하지 않음
+        if(me && me.user && me.user.role !== 'admin'){
+          state.isLoggedIn = true;
+          state.user = me.user;
+        }else{
+          state.isLoggedIn = false;
+          state.user = null;
+        }
+      }catch{ state.isLoggedIn = false; state.user = null; }
+
       const btnAuth = document.getElementById('btnAuth');
       const btnLogout = document.getElementById('btnLogout');
+
       if(state.isLoggedIn){
-        btnAuth.textContent = '업로드';
+        btnAuth.textContent = '마이페이지';
         btnLogout.style.display = 'inline-flex';
       }else{
         btnAuth.textContent = '로그인';
         btnLogout.style.display = 'none';
       }
-      render(); // 상태 변경 반영
+      render(); // 상태 반영
     }
 
-    // 로그인/업로드 모달 열기
+    // 로그인/마이페이지 모달 열기
     document.getElementById('btnAuth').addEventListener('click', ()=>{
-      const mod = state.isLoggedIn ? qs('#modalUpload') : qs('#modalLogin');
-      mod.classList.add('open'); mod.focus(); document.body.classList.add('no-scroll');
+      if(state.isLoggedIn){
+        // 마이페이지 오픈
+        const mod = qs('#modalMypage');
+        qs('#myUser').textContent = state.user ? `${state.user.username}` : '-';
+        mod.classList.add('open'); mod.focus(); document.body.classList.add('no-scroll');
+      }else{
+        // 로그인 모달
+        const mod = qs('#modalLogin');
+        mod.classList.add('open'); mod.focus(); document.body.classList.add('no-scroll');
+      }
     });
 
-    // 로그아웃
+    // 로그아웃 (헤더)
     document.getElementById('btnLogout').addEventListener('click', async ()=>{
       try{ await api('/api/auth/logout','POST'); }catch(e){ console.warn('logout error', e); }
-      state.isLoggedIn = false;
-      qs('#modalLogin').classList.remove('open');
-      qs('#modalUpload').classList.remove('open');
+      state.isLoggedIn = false; state.user = null;
+      ['#modalLogin','#modalMypage','#modal'].forEach(sel=>qs(sel)?.classList.remove('open'));
       document.body.classList.remove('no-scroll');
       await refreshAuthUI();
     });
 
-    // Sign In
+    // 마이페이지 안의 로그아웃
+    document.getElementById('btnMypageLogout').addEventListener('click', async ()=>{
+      try{ await api('/api/auth/logout','POST'); }catch{}
+      state.isLoggedIn = false; state.user = null;
+      qs('#modalMypage').classList.remove('open'); document.body.classList.remove('no-scroll');
+      await refreshAuthUI();
+    });
+    // 마이페이지 닫기
+    document.getElementById('btnCloseMypage').addEventListener('click', ()=>{
+      qs('#modalMypage').classList.remove('open'); document.body.classList.remove('no-scroll');
+    });
+    qs('#modalMypage').addEventListener('click', e=>{ if(e.target === e.currentTarget){ qs('#modalMypage').classList.remove('open'); document.body.classList.remove('no-scroll'); } });
+
+    // Sign In (메인: 관리자 차단)
     document.getElementById('login-in').addEventListener('submit', async (e)=>{
       e.preventDefault();
       const username = (document.getElementById('loginUsername').value||'').trim();
       const pw = (document.getElementById('loginPw').value||'').trim();
-      if(!username || !pw) return;
+
       try{
         await api('/api/auth/login','POST',{ username, password: pw });
+
+        // 2) 혹시 서버에서 관리자 토큰이 발급되었을 경우(예외) 즉시 차단
+        try{
+          const me = await api('/api/auth/whoami');
+          if(me?.user?.role === 'admin'){
+            await api('/api/auth/logout','POST');
+            return;
+          }
+        }catch{}
+
         await refreshAuthUI();
         const m=qs('#modalLogin'); m.classList.remove('open'); document.body.classList.remove('no-scroll');
       }catch(err){ alert(err.data?.error || '로그인 실패'); }
     });
 
-    // Sign Up
+    // Sign Up (일반 사용자만 의미 있음)
     document.getElementById('login-up')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const username = document.getElementById('signupUsername')?.value?.trim();
       const email = document.getElementById('signupEmail')?.value?.trim();
       const pw = document.getElementById('signupPw')?.value?.trim();
       if(!username || !pw){ alert('Username/Password는 필수입니다.'); return; }
+      if(username.toLowerCase() === 'admin'){
+        alert('이 사용자명은 사용할 수 없습니다.');
+        return;
+      }
       try{
         await api('/api/auth/signup','POST',{ username, email, password: pw });
         signin?.click();
@@ -639,207 +579,13 @@
       }catch(err){ alert(err.data?.error || '가입 실패'); }
     });
 
-    // ==== Upload: Dropzone + Preview ====
-    const drop = document.getElementById('dropArea');
-    const fileInput = document.getElementById('uThumb');
-    const pv = document.getElementById('thumbPreview');
-    const pvImg = document.getElementById('thumbPreviewImg');
-    const pvName = document.getElementById('thumbName');
-    const pvSize = document.getElementById('thumbSize');
-
-    function renderPreview(file){
-      if(!file){ pv.style.display='none'; return; }
-      const url = URL.createObjectURL(file);
-      pvImg.src = url;
-      pvName.textContent = file.name || 'image.png';
-      const kb = Math.round(file.size/1024);
-      pvSize.textContent = `${kb.toLocaleString()} KB`;
-      pv.style.display='flex';
-    }
-    fileInput.addEventListener('change', e=>{
-      renderPreview(e.target.files?.[0]);
-    });
-    ;['dragenter','dragover'].forEach(ev=>{
-      drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); drop.classList.add('drag'); });
-    });
-    ;['dragleave','drop'].forEach(ev=>{
-      drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); drop.classList.remove('drag'); });
-    });
-    drop.addEventListener('drop', e=>{
-      const f = e.dataTransfer.files?.[0];
-      if(f){ fileInput.files = e.dataTransfer.files; renderPreview(f); }
-    });
-
-    // 업로드 제출(FormData 서버 우선 → 미구현시 메모리)
-    document.getElementById('btnResetUpload').addEventListener('click', ()=>{
-      document.getElementById('uploadForm').reset();
-      pv.style.display='none';
-    });
-
-    document.getElementById('uploadForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const title = qs('#uTitle').value.trim();
-      const description = qs('#uDesc').value.trim();
-      const url = qs('#uUrl').value.trim();
-      const subject = qs('#uSubject').value || '';
-      const file = qs('#uThumb').files[0];
-
-      if(!title || !description || !url){
-        alert('제목/설명/URL은 필수입니다.');
-        return;
-      }
-
-      let ok=false;
-      try{
-        const fd = new FormData();
-        fd.append('title', title);
-        fd.append('description', description);
-        fd.append('url', url);
-        fd.append('subject', subject);
-        if(file) fd.append('thumb', file);
-        const res = await fetch('/api/models', { method:'POST', body:fd, credentials:'include' });
-        if(res.ok){
-          ok=true; await loadModels(); render();
-        }
-      }catch(e){ console.warn('POST /api/models 실패(서버 미구현일 수 있음)', e); }
-
-      if(!ok){
-        let thumb=null; if(file){ thumb = URL.createObjectURL(file); }
-        const nextId = (MODELS.reduce((m,cur)=>Math.max(m, cur.id||0), 0) || 0) + 1;
-        MODELS.unshift({ id: nextId, title, description, url, subject, thumb });
-        render();
-      }
-
-      const m=qs('#modalUpload'); m.classList.remove('open'); document.body.classList.remove('no-scroll');
-      e.target.reset(); pv.style.display='none'; state.page=1;
-    });
-
-    /* ====== [추가] 공통 닫힘 함수 & 모달 닫기 바인딩 ====== */
-    function closeAllModals(){
-      document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
-      document.body.classList.remove('no-scroll');
-      const iframe = document.getElementById('viewer');
-      if (iframe) iframe.src = '';
-    }
-    const _modalUpload = document.getElementById('modalUpload');
-    if (_modalUpload) {
-      _modalUpload.addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) closeAllModals();
-      });
-    }
-    const _btnCloseUpload = document.getElementById('btnCloseUpload');
-    _btnCloseUpload && _btnCloseUpload.addEventListener('click', closeAllModals);
-    const _modalLogin = document.getElementById('modalLogin');
-    if (_modalLogin) {
-      _modalLogin.addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) closeAllModals();
-      });
-    }
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.querySelector('.modal.open')) {
-        e.stopPropagation();
-        closeAllModals();
-      }
-    }, true);
-
-    /* ====== [추가] 카드 드래그 앤 드롭 정렬 ====== */
-    function setupDragAndDrop(){
-      const cards = qsa('#results .item');
-      cards.forEach(card=>{
-        card.setAttribute('draggable','true');
-
-        card.addEventListener('dragstart', (e)=>{
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', card.dataset.id);
-        });
-
-        card.addEventListener('dragend', ()=>{
-          card.classList.remove('dragging','drag-over-before','drag-over-after');
-          qsa('#results .item').forEach(c=>c.classList.remove('drag-over-before','drag-over-after'));
-        });
-
-        card.addEventListener('dragover', (e)=>{
-          e.preventDefault();
-          const rect = card.getBoundingClientRect();
-          const before = (e.clientY < rect.top + rect.height/2);
-          qsa('#results .item').forEach(c=>c.classList.remove('drag-over-before','drag-over-after'));
-          card.classList.add(before ? 'drag-over-before' : 'drag-over-after');
-          e.dataTransfer.dropEffect = 'move';
-        });
-
-        card.addEventListener('dragleave', ()=>{
-          card.classList.remove('drag-over-before','drag-over-after');
-        });
-
-        card.addEventListener('drop', (e)=>{
-          e.preventDefault();
-          const fromId = e.dataTransfer.getData('text/plain');
-          const toId = card.dataset.id;
-          if(!fromId || !toId || fromId === toId) return;
-
-          const rect = card.getBoundingClientRect();
-          const placeBefore = (e.clientY < rect.top + rect.height/2);
-
-          reorderModelsById(fromId, toId, placeBefore);
-          function reorderModelsById(fromId, toId, placeBefore){
-  fromId = String(fromId); toId = String(toId);
-  let fromIdx = MODELS.findIndex(m=>String(m.id)===fromId);
-  let toIdx = MODELS.findIndex(m=>String(m.id)===toId);
-  if(fromIdx<0 || toIdx<0) return;
-
-  const [moved] = MODELS.splice(fromIdx,1);
-  toIdx = MODELS.findIndex(m=>String(m.id)===toId);
-  const insertAt = placeBefore ? toIdx : toIdx + 1;
-  MODELS.splice(insertAt, 0, moved);
-
-  render(); // 새 순서로 다시 그림
-
-  // ✅ 여기 추가: 서버에 현재 순서 저장
-  persistOrder().catch(()=>{}); // 실패해도 UI는 유지
-}
-
-        });
-      });
-    }
-
-    function reorderModelsById(fromId, toId, placeBefore){
-      fromId = String(fromId); toId = String(toId);
-      let fromIdx = MODELS.findIndex(m=>String(m.id)===fromId);
-      let toIdx = MODELS.findIndex(m=>String(m.id)===toId);
-      if(fromIdx<0 || toIdx<0) return;
-
-      const [moved] = MODELS.splice(fromIdx,1); // 먼저 빼고
-      // 대상 위치 재탐색(인덱스가 바뀌었을 수 있음)
-      toIdx = MODELS.findIndex(m=>String(m.id)===toId);
-      const insertAt = placeBefore ? toIdx : toIdx + 1;
-      MODELS.splice(insertAt, 0, moved);
-
-      render(); // 새 순서로 다시 그림
-    }
-
     // 시작
     document.getElementById('year').textContent=new Date().getFullYear();
     (async()=>{ await refreshAuthUI(); await loadModels(); render(); })();
-    async function persistOrder(){
-  try{
-    const order = MODELS.map(m => m.id);
-    const res = await fetch('/api/models/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ order })
-    });
-    if(!res.ok){
-      const d = await res.json().catch(()=>({}));
-      throw new Error(d.error || 'REORDER_FAILED');
-    }
-    // 성공 시 아무 것도 안 해도 됨
-  }catch(e){
-    console.warn('순서 저장 실패:', e.message || e);
-    // 필요하면 사용자에게 토스트: alert('순서 저장 실패(로그인 필요?)');
-  }
-}
+    document.getElementById('brandHome')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  window.location.reload();
+});
 
   </script>
 </body>
