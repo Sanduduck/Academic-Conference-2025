@@ -312,7 +312,12 @@
       mod.focus();
       document.body.classList.add('no-scroll');
     }
-
+function closeLoginModal(){
+  const mod = document.querySelector('#modalLogin');
+  if(!mod) return;
+  mod.classList.remove('open');
+  document.body.classList.remove('no-scroll');
+}
     let MODELS = [];
     const SUBJECTS = {
       biology:{ label:'생명과학', keywords:['세포','DNA','생명','생물','유전','단백질','광합성'] },
@@ -680,6 +685,22 @@
     // 시작
     document.getElementById('year').textContent=new Date().getFullYear();
     (async()=>{ await refreshAuthUI(); await loadModels(); render(); })();
-  </script>
+ // ESC로 로그인 모달 닫기
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && document.querySelector('#modalLogin')?.classList.contains('open')){
+    closeLoginModal();
+  }
+}, true);
+
+// 내용 바깥 클릭 시 로그인 모달 닫기
+document.getElementById('modalLogin')?.addEventListener('click', (e)=>{
+  const content = document.querySelector('#modalLogin .login__content');
+  if (!content) return;
+  if (!content.contains(e.target)) {
+    closeLoginModal();
+  }
+});
+
+ </script>
 </body>
 </html>
