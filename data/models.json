@@ -1,13 +1,5 @@
 [
   {
-    "id": 29,
-    "title": "위도, 경도 시각화 (Latitude and Longitude Visualised)",
-    "description": "본초자오선과 위·경도 좌표계를 3D로 보여준다. 실제 좌표를 이용한 위치·환경 분석 학습에 활용된다.",
-    "url": "https://sketchfab.com/3d-models/latitude-and-longitude-visualised-a1afb9ef20e441d6b60c211ee7f929a6",
-    "subject": "",
-    "thumb": "/uploads/thumbs/1761723293500_79kqpitjoxm.jpg"
-  },
-  {
     "id": 28,
     "title": "쾨펜 기후 구분 (Koppen Climate Classification)",
     "description": "세계 기후대를 색상으로 구분한 지도 모델이다. 위도·지형·기후의 관계를 분석하는 수업에 활용된다.",
@@ -40,12 +32,28 @@
     "thumb": "/uploads/thumbs/1761723080984_26tvnv231pb.jpg"
   },
   {
-    "id": 24,
-    "title": "뇌 구조 (Human Brain Anatomy)",
-    "description": "대뇌·소뇌·뇌간 등 주요 부위를 입체적으로 볼 수 있다. 각 부위의 기능과 손상 사례를 연결해 학습할 수 있다.",
-    "url": "https://sketchfab.com/3d-models/cerebellum-d0bbd40188c84e99a89f816615fbeeaf",
-    "subject": "biology",
-    "thumb": "/uploads/thumbs/1761723013079_x7dbqib108.jpg"
+    "id": 20,
+    "title": "지각판 충돌 (Tectonic Plates Collide)",
+    "description": "두 지각판이 충돌하며 산맥이나 해구를 형성하는 과정을 애니메이션 형태로 표현한 모델이다.",
+    "url": "https://sketchfab.com/3d-models/animated-tectonic-plates-collide-loop-4a052941a17941b39052fa1451c63928",
+    "subject": "earth",
+    "thumb": "/uploads/thumbs/1761718627001_339gd5ga2jf.jpg"
+  },
+  {
+    "id": 2,
+    "title": "원시 행성계 원반의 화학적 성분 (The Chemical Content of Protoplanetary Disks)",
+    "description": "별 주위를 도는 가스와 먼지의 원반 형태 구조로, 행성이 형성되기 전 초기 단계의 화학 조성을 시각화한 모델이다. 행성 형성 과정의 기초를 보여준다.",
+    "url": "https://sketchfab.com/3d-models/the-chemical-content-of-protoplanetary-disks-6c7ba1ba112c408da35736f881788130",
+    "subject": "earth",
+    "thumb": "/uploads/thumbs/1761718104069_iov13vc71h.jpg"
+  },
+  {
+    "id": 21,
+    "title": "지진과 쓰나미 (Earthquake and Tsunami)",
+    "description": "지진 발생과 그에 따른 쓰나미 전파 과정을 단계별로 시각화한 모델이다.",
+    "url": "https://sketchfab.com/3d-models/earthquake-and-tsunami-5325ba12207c4dada68345e52c35ee38",
+    "subject": "earth",
+    "thumb": "/uploads/thumbs/1761718647881_rg1lmkwl0bh.jpg"
   },
   {
     "id": 23,
@@ -64,20 +72,20 @@
     "thumb": "/uploads/thumbs/1761722964761_0q94x2xpnev.jpg"
   },
   {
-    "id": 21,
-    "title": "지진과 쓰나미 (Earthquake and Tsunami)",
-    "description": "지진 발생과 그에 따른 쓰나미 전파 과정을 단계별로 시각화한 모델이다.",
-    "url": "https://sketchfab.com/3d-models/earthquake-and-tsunami-5325ba12207c4dada68345e52c35ee38",
-    "subject": "earth",
-    "thumb": "/uploads/thumbs/1761718647881_rg1lmkwl0bh.jpg"
+    "id": 24,
+    "title": "뇌 구조 (Human Brain Anatomy)",
+    "description": "대뇌·소뇌·뇌간 등 주요 부위를 입체적으로 볼 수 있다. 각 부위의 기능과 손상 사례를 연결해 학습할 수 있다.",
+    "url": "https://sketchfab.com/3d-models/cerebellum-d0bbd40188c84e99a89f816615fbeeaf",
+    "subject": "biology",
+    "thumb": "/uploads/thumbs/1761723013079_x7dbqib108.jpg"
   },
   {
-    "id": 20,
-    "title": "지각판 충돌 (Tectonic Plates Collide)",
-    "description": "두 지각판이 충돌하며 산맥이나 해구를 형성하는 과정을 애니메이션 형태로 표현한 모델이다.",
-    "url": "https://sketchfab.com/3d-models/animated-tectonic-plates-collide-loop-4a052941a17941b39052fa1451c63928",
-    "subject": "earth",
-    "thumb": "/uploads/thumbs/1761718627001_339gd5ga2jf.jpg"
+    "id": 29,
+    "title": "위도, 경도 시각화 (Latitude and Longitude Visualised)",
+    "description": "본초자오선과 위·경도 좌표계를 3D로 보여준다. 실제 좌표를 이용한 위치·환경 분석 학습에 활용된다.",
+    "url": "https://sketchfab.com/3d-models/latitude-and-longitude-visualised-a1afb9ef20e441d6b60c211ee7f929a6",
+    "subject": "",
+    "thumb": "/uploads/thumbs/1761723293500_79kqpitjoxm.jpg"
   },
   {
     "id": 19,
@@ -214,14 +222,6 @@
     "url": "https://sketchfab.com/3d-models/earth-globe-98d2b04d46474bafb4250cc75dc583b3",
     "subject": "earth",
     "thumb": "/uploads/thumbs/1761718131467_ff405eyr2lv.jpg"
-  },
-  {
-    "id": 2,
-    "title": "원시 행성계 원반의 화학적 성분 (The Chemical Content of Protoplanetary Disks)",
-    "description": "별 주위를 도는 가스와 먼지의 원반 형태 구조로, 행성이 형성되기 전 초기 단계의 화학 조성을 시각화한 모델이다. 행성 형성 과정의 기초를 보여준다.",
-    "url": "https://sketchfab.com/3d-models/the-chemical-content-of-protoplanetary-disks-6c7ba1ba112c408da35736f881788130",
-    "subject": "earth",
-    "thumb": "/uploads/thumbs/1761718104069_iov13vc71h.jpg"
   },
   {
     "id": 1,
