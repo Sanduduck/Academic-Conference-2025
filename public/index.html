@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>교육용 모델 카탈로그</title>
+  <title>중고등학생 3D 교육 도움 시스템</title>
+  <link rel="icon" type="image/png" href="/images/invert_logo.png">
   <meta name="description" content="파일(models.json) 또는 /api/models 기반 교육용 모델 카탈로그. 과목 필터 + 로그인/로그아웃 + 마이페이지(+관리자 차단) + Sketchfab 임베드 팝업." />
   <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
 
@@ -20,7 +21,7 @@
     .container{max-width:1280px;margin:0 auto;padding:0 16px}
     header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
     .nav{display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}
-    .brand{display:inline-flex;align-items:center;gap:.6rem;font-weight:800;text-decoration:none;color:var(--text)}
+    .brand{font-size: 1.2rem; display:inline-flex;align-items:center;gap:.6rem;font-weight:800;text-decoration:none;color:var(--text)}
     .brand:hover{opacity:.85}
     .logo{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--c1),var(--c2))}
     .search{flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:8px 10px;margin:0 16px}
@@ -132,6 +133,15 @@
     @media(max-width:720px){ .mypage .row{grid-template-columns:1fr} }
     .mypage .card{border:1px solid var(--bd);border-radius:12px;padding:14px;background:#fff}
     .mypage h3{margin:0 0 8px 0}
+    /* 로고 전용 스타일 */
+.brand-logo {
+  height: 2em;        /* 제목 크기에 맞춤 */
+  width: auto;
+  vertical-align: middle;
+  border-radius: 6px;   /* 살짝 둥근 모서리 */
+   filter: invert(1);
+}
+
   </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -139,7 +149,10 @@
 <body>
   <header>
     <div class="container nav">
-      <a class="brand" id="brandHome" href="/"><div class="logo"></div> 교육용 모델 카탈로그</a>
+      <a class="brand" id="brandHome" href="/">
+  <img src="images/logo.png" alt="로고" class="brand-logo">
+  중고등학생 3D 교육 도움 시스템
+</a>
       <div class="search">
         🔎<input id="q" placeholder="모델/설명 검색 (예: 세포, 화산, DNA, 광학)" />
         <button class="btn" id="btnSearch">검색</button>
@@ -155,9 +168,7 @@
           <label><input type="checkbox" class="subject-chk" value="biology">생명과학</label>
           <label><input type="checkbox" class="subject-chk" value="earth">지구과학</label>
           <label><input type="checkbox" class="subject-chk" value="physics">물리</label>
-          <label><input type="checkbox" class="subject-chk" value="chemistry">화학</label>
-          <label><input type="checkbox" class="subject-chk" value="history">한국사</label>
-          <label><input type="checkbox" class="subject-chk" value="geography">지리</label>
+          <label><input type="checkbox" class="subject-chk" value="chemistry">화학</label>          <label><input type="checkbox" class="subject-chk" value="geography">지리</label>
         </div>
         <button class="btn clear" id="btnClear" type="button">초기화</button>
       </div>
