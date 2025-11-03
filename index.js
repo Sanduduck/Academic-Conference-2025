@@ -9,9 +9,12 @@ const https = require("https");
 const http = require("http");
 const { URL } = require("url");
 const { db, runMigrations } = require("./db");
+// 🍑 Python AI 서버 프록시용
+const axios = require("axios");
 
 const app = express();
 const PORT = 3000;
+const PYTHON_AI_SERVER = "http://localhost:8000"; // 🍑 Python 서버 주소
 
 /* ================== 경로 상수 ================== */
 const DATA_DIR = path.join(__dirname, "data");
@@ -429,6 +432,42 @@ app.get("/api/models/:id", (req, res) => {
   const item = list.find((m) => Number(m.id) === id);
   if (!item) return res.status(404).json({ error: "NOT_FOUND" });
   res.json(item);
+});
+
+/* ================== 🍑 AI 의미 검색 API (Python 서버 프록시) ================== */
+app.get("/api/semantic_search", async (req, res) => {
+  try {
+    const { q, k = 20 } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ error: "검색어를 입력해주세요" });
+    }
+
+    // 🍑 Python AI 서버로 프록시
+    const response = await axios.get(`${PYTHON_AI_SERVER}/semantic_search`, {
+      params: { q, k },
+      timeout: 5000 // 5초 타임아웃
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("🍑 AI 검색 에러:", error.message);
+
+    // 🍑 Python 서버가 꺼져있을 때 graceful fallback
+    if (error.code === 'ECONNREFUSED') {
+      return res.json({
+        error: "AI 서버가 실행 중이지 않습니다",
+        results: [],
+        fallback: true
+      });
+    }
+
+    res.status(500).json({
+      error: "AI 검색 중 오류 발생",
+      details: error.message,
+      results: []
+    });
+  }
 });
 
 /* ================== Admin: 모델 업로드/삭제/정렬 ================== */

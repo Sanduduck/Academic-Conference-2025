@@ -366,6 +366,66 @@
         padding: 0;
       }
 
+      /* 🍑 AI 검색 토글 스위치 */
+      .ai-toggle-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .ai-toggle {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 24px;
+      }
+
+      .ai-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .ai-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 24px;
+      }
+
+      .ai-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .ai-slider {
+        background-color: #2196F3;
+      }
+
+      input:checked + .ai-slider:before {
+        transform: translateX(24px);
+      }
+
+      .ai-toggle-label {
+        user-select: none;
+        cursor: pointer;
+      }
+
       /* Footer */
       footer {
         border-top: 1px solid var(--bd);
@@ -603,6 +663,16 @@
             placeholder="모델/설명 검색 (예: 세포, 화산, DNA, 광학)"
           />
           <button class="btn" id="btnSearch">검색</button>
+          <!-- 🍑 AI 검색 토글 스위치 -->
+          <div class="ai-toggle-wrapper">
+            <label class="ai-toggle">
+              <input type="checkbox" id="aiSearchToggle" checked>
+              <span class="ai-slider"></span>
+            </label>
+            <label for="aiSearchToggle" class="ai-toggle-label">
+              🤖 AI 검색
+            </label>
+          </div>
         </div>
         <div style="display: flex; gap: 8px">
           <button class="btn primary" id="btnAuth" type="button">로그인</button>
@@ -980,6 +1050,7 @@
         isLoggedIn: false,
         user: null,
         bookmarks: new Set(),
+        useAISearch: true, // 🍑 AI 검색 사용 여부 (기본값: true)
       };
 
       // ---- 자동 썸네일 (캔버스) ----
@@ -1166,14 +1237,166 @@
       </article>`;
       }
 
-      function render() {
-        let list = MODELS.filter(
-          (m) =>
-            !state.q ||
+      /* ================== 🍑 하이브리드 검색 함수들 ================== */
+
+      // 🍑 점수 정규화 함수 (0~1 범위로 변환)
+      function normalizeScores(results) {
+        if (results.length === 0) return results;
+
+        const scores = results.map(r => r.score);
+        const max = Math.max(...scores);
+        const min = Math.min(...scores);
+
+        if (max === min) {
+          return results.map(r => ({ ...r, normScore: 1 }));
+        }
+
+        return results.map(r => ({
+          ...r,
+          normScore: (r.score - min) / (max - min)
+        }));
+      }
+
+      // 🍑 AI 의미 검색 호출
+      async function fetchSemanticResults(query) {
+        if (!query) return [];
+
+        try {
+          const res = await fetch(`/api/semantic_search?q=${encodeURIComponent(query)}&k=20`);
+          const data = await res.json();
+
+          if (data.error || data.fallback) {
+            console.log("🍑 AI 검색 사용 불가:", data.error);
+            return [];
+          }
+
+          return data.results.map(r => ({
+            id: r.id,
+            item: MODELS.find(m => m.id === r.id) || r, // 로컬 데이터 우선
+            score: r.score,
+            source: "ai"
+          }));
+        } catch (error) {
+          console.error("🍑 AI 검색 오류:", error);
+          return [];
+        }
+      }
+
+      // 🍑 하이브리드 검색 (문자열 + AI)
+      async function hybridSearch(query) {
+        // 1. 문자열 검색 (기존 방식)
+        const localResults = MODELS
+          .filter(m =>
+            !query ||
             (m.title + (m.description || ""))
               .toLowerCase()
-              .includes(state.q.toLowerCase())
-        ).filter((m) => !state.subject || matchSubject(m, state.subject));
+              .includes(query.toLowerCase())
+          )
+          .map(m => ({
+            id: m.id,
+            item: m,
+            score: 1.0, // 문자열 매칭은 기본 점수 1.0
+            source: "text"
+          }));
+
+        // 쿼리가 없으면 문자열 검색만 반환
+        if (!query) {
+          return localResults.map(r => r.item);
+        }
+
+        // 🍑 AI 검색이 비활성화되면 문자열 검색만 반환
+        if (!state.useAISearch) {
+          return localResults.map(r => r.item);
+        }
+
+        // 2. AI 의미 검색
+        const aiResults = await fetchSemanticResults(query);
+
+        // AI 결과가 없으면 문자열 검색만 사용
+        if (aiResults.length === 0) {
+          return localResults.map(r => r.item);
+        }
+
+        // 3. 점수 정규화
+        const normalizedAI = normalizeScores(aiResults);
+
+        // 4. 병합 (가중 평균)
+        const alpha = 0.65; // 🍑 문자열 검색 가중치 (0.65 = 65%)
+        const mergedMap = {};
+
+        // 문자열 결과 먼저 추가
+        for (const r of localResults) {
+          mergedMap[r.id] = {
+            item: r.item,
+            score: alpha * 1.0,
+            srcText: true,
+            srcAI: false
+          };
+        }
+
+        // AI 결과 병합
+        for (const r of normalizedAI) {
+          if (mergedMap[r.id]) {
+            // 이미 문자열로 나온 항목 - 점수 합산
+            mergedMap[r.id].score += (1 - alpha) * r.normScore;
+            mergedMap[r.id].srcAI = true;
+          } else {
+            // AI에서만 나온 항목
+            mergedMap[r.id] = {
+              item: r.item,
+              score: (1 - alpha) * r.normScore,
+              srcText: false,
+              srcAI: true
+            };
+          }
+        }
+
+        // 5. 점수 기준 정렬
+        const finalResults = Object.values(mergedMap)
+          .sort((a, b) => b.score - a.score)
+          .map(r => r.item);
+
+        return finalResults;
+      }
+
+      // 🍑 비동기 렌더링을 위한 플래그
+      let isSearching = false;
+
+      async function render() {
+        // 검색 중 중복 호출 방지
+        if (isSearching && state.q) return;
+
+        let list;
+
+        // 검색어가 있으면 하이브리드 검색 수행
+        if (state.q) {
+          isSearching = true;
+          // 🍑 AI 검색 여부에 따라 다른 메시지 표시
+          qs("#count").textContent = state.useAISearch
+            ? "🍑 AI 검색 중..."
+            : "🔎 검색 중...";
+
+          try {
+            list = await hybridSearch(state.q);
+          } catch (error) {
+            console.error("🍑 하이브리드 검색 실패, 기본 검색 사용:", error);
+            // 폴백: 기존 문자열 검색만 사용
+            list = MODELS.filter(
+              (m) =>
+                (m.title + (m.description || ""))
+                  .toLowerCase()
+                  .includes(state.q.toLowerCase())
+            );
+          } finally {
+            isSearching = false;
+          }
+        } else {
+          // 검색어 없으면 전체 목록
+          list = MODELS;
+        }
+
+        // 과목 필터 적용
+        list = list.filter((m) => !state.subject || matchSubject(m, state.subject));
 
         const total = list.length;
         const pages = Math.max(1, Math.ceil(total / state.per));
@@ -1181,7 +1404,9 @@
         const start = (state.page - 1) * state.per;
         const pageItems = list.slice(start, start + state.per);
 
-        qs("#count").textContent = `${total}개 결과`;
+        // 🍑 검색 모드에 따른 결과 표시
+        const searchMode = state.q && state.useAISearch ? " (AI 검색)" : "";
+        qs("#count").textContent = `${total}개 결과${searchMode}`;
         qs("#results").innerHTML = pageItems.map(cardHTML).join("");
 
         // 썸네일 클릭 → 미리보기 (★ 북마크 버튼 클릭은 무시)
@@ -1275,30 +1500,42 @@
           )
           .join("");
         qsa("#pager [data-page]").forEach((b) =>
-          b.addEventListener("click", () => {
+          b.addEventListener("click", async () => {
             state.page = +b.dataset.page;
-            render();
+            await render(); // 🍑 async 처리
           })
         );
       }
 
-      // 검색
-      qs("#btnSearch").addEventListener("click", () => {
+      // 🍑 검색 (async 처리)
+      qs("#btnSearch").addEventListener("click", async () => {
         state.q = qs("#q").value.trim();
         state.page = 1;
-        render();
+        await render();
       });
-      qs("#q").addEventListener("keydown", (e) => {
+      qs("#q").addEventListener("keydown", async (e) => {
         if (e.key === "Enter") {
           state.q = qs("#q").value.trim();
           state.page = 1;
-          render();
+          await render();
         }
       });
 
-      // 과목 단일 선택
+      // 🍑 AI 검색 토글 스위치 이벤트
+      qs("#aiSearchToggle").addEventListener("change", async (e) => {
+        state.useAISearch = e.target.checked;
+        // 검색어가 있으면 즉시 재검색
+        if (state.q) {
+          state.page = 1;
+          await render();
+        }
+        // 토글 상태를 localStorage에 저장
+        localStorage.setItem("useAISearch", state.useAISearch ? "true" : "false");
+      });
+
+      // 🍑 과목 단일 선택 (async 처리)
       qsa(".subject-chk").forEach((chk) => {
-        chk.addEventListener("change", () => {
+        chk.addEventListener("change", async () => {
           if (chk.checked) {
             qsa(".subject-chk").forEach((other) => {
               if (other !== chk) other.checked = false;
@@ -1308,14 +1545,14 @@
             state.subject = null;
           }
           state.page = 1;
-          render();
+          await render();
         });
       });
-      qs("#btnClear").addEventListener("click", () => {
+      qs("#btnClear").addEventListener("click", async () => {
         qsa(".subject-chk").forEach((c) => (c.checked = false));
         state.subject = null;
         state.page = 1;
-        render();
+        await render();
       });
 
       // 뷰어 모달 닫기
@@ -1423,7 +1660,7 @@
           btnAuth.textContent = "로그인";
           btnLogout.style.display = "none";
         }
-        render(); // 상태 반영(북마크 아이콘도 반영)
+        await render(); // 🍑 상태 반영(북마크 아이콘도 반영)
       }
 
       // 로그인/마이페이지 이동
@@ -1544,9 +1781,16 @@
       // 시작
       document.getElementById("year").textContent = new Date().getFullYear();
       (async () => {
+        // 🍑 저장된 AI 검색 설정 불러오기
+        const savedAISearch = localStorage.getItem("useAISearch");
+        if (savedAISearch !== null) {
+          state.useAISearch = savedAISearch === "true";
+          qs("#aiSearchToggle").checked = state.useAISearch;
+        }
+
         await refreshAuthUI();
         await loadModels();
-        render();
+        await render(); // 🍑 async 처리
       })();
       // ESC로 로그인 모달 닫기
       document.addEventListener(
